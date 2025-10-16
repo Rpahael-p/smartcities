@@ -24,22 +24,33 @@ pot = ADC(Pin(26))
 led = Pin(18, Pin.OUT)
 buzzer = PWM(Pin(27))   # Exemple : buzzer sur GPIO15
 
-# Timer pour clignotement LED
+# Timer pour clignotement LED et LCD
 timer = Timer(-1)
+timerLCD = Timer(-1)
 
 # --- Variables globales ---
 last_check_time = ticks_ms()
 current_blink_freq = 0           
 alarm_active = False
+current_allarm= False
 
 # --- Fonction de clignotement LED ---
 def toggle_led(timer):
     led.toggle()
     print("toggle led")
 
-def set_led_blink(freq):
+def LCDAllarm(timer):
+    print("toggle alarm")
+    d.clear()
+    d.setCursor(0,0)
+    d.print("ALARME")
+    d.setCursor(0,1)
+    d.print("ALARME")
 
+
+def set_led_blink(freq):
     global timer, current_blink_freq
+
     if freq == current_blink_freq:
         return  # rien à faire si la frequence precedente est la meme que celle a placer
     timer.deinit()
@@ -48,6 +59,14 @@ def set_led_blink(freq):
         timer.init(freq=freq, mode=Timer.PERIODIC, callback=toggle_led)
     else:
         led.off()
+
+def set_allarm_blink():
+    global timerLCDe
+    timerLCD.deinit()
+    
+    timerLCD.init(mode=Timer.ONE_SHOT, period=500 , callback=LCDAllarm)
+
+
 
 # --- cleanup pour la led et le buzzer ---
 def cleanup():
@@ -83,9 +102,8 @@ def main():
                 
 
                 if diff > 3:
-                    # Température > consigne +3°C 
-                    d.setCursor(10, 0)
-                    d.print("ALARM")
+                    # Température > consigne +3°C
+                    set_allarm_blink()
                     set_led_blink(2)  # LED à 2 Hz
                     buzzer.freq(1318)
                     buzzer.duty_u16(30000)
